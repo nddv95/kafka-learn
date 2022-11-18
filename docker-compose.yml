@@ -9,6 +9,8 @@ services:
       - mysql-data:/var/lib/mysql
     ports:
       - 3306:3306
+    networks:
+      - sourceconnectnet
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.5.1
     container_name: elasticsearch
@@ -21,6 +23,7 @@ services:
       - es-data:/usr/share/elasticsearch/data
     networks:
       - esnet
+      - sinkconnectnet
   kibana:
     image: docker.elastic.co/kibana/kibana:8.5.1
     container_name: kibana
@@ -35,12 +38,30 @@ services:
     image: nddv95/kafka
     container_name: kafka
     volumes:
-      - kafka-data:/tmp/data
+      - kafka-data:/tmp/kafka-logs
       - zookeeper-data:/tmp/zookeeper
     ports:
       - 9092:9092
+    networks:
+      - kafkanet
+  kafka-connect:
+    build: ./kafka-connect
+    image: nddv95/kafka-connect
+    container_name: kafka-connect
+    networks:
+      - sourceconnectnet
+      - sinkconnectnet
+      - kafkanet
+    ports:
+      - 8083:8083
+    depends_on:
+      - mysql
+      - kafka
 networks:
   esnet:
+  kafkanet:
+  sourceconnectnet:
+  sinkconnectnet:
 volumes:
   mysql-data:
   es-data:
